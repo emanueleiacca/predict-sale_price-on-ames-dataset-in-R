@@ -24,6 +24,8 @@ BSS
 Results and Evaluation:
 
 The project evaluates the performance of each algorithm in terms of prediction accuracy and error metrics, such as mean squared error (MSE), root mean squared error (RMSE), and R-squared (R²) value. These metrics help to compare and understand the effectiveness of each algorithm for the given task.
+![unnamed-chunk-89-1](https://github.com/emanueleiacca/predict-sale_price-on-ames-dataset-in-R/assets/128679981/3e081de3-eeaa-4374-917a-30f308188fb1)
+
 The evaluation results and insights are provided within the code files and can be further analyzed and visualized using appropriate visualization techniques.
 
 Conclusion:
