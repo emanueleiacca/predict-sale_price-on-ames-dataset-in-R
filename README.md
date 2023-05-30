@@ -8,6 +8,17 @@ Dataset:
 
 The project utilizes the Ames Housing dataset, which is a comprehensive dataset containing 79 explanatory variables describing various aspects of residential homes in Ames, Iowa. The dataset provides information such as the quality of the house, its size, the type of utilities available, and many other features that may influence the sale price.
 
+EDA Phase:
+During the exploratory data analysis (EDA) phase, the following steps were performed:
+
+Outlier Detection: Outliers in the dataset were identified using appropriate techniques such as box plots, scatter plots, or statistical methods. Any outliers that significantly deviated from the majority of the data were treated or removed from the dataset.
+
+Correlation Analysis: The correlation between variables was examined to identify highly correlated features. This step helps to avoid multicollinearity issues in the subsequent modeling phase.
+
+Log Transformation: In cases where variables showed skewed distributions, log transformations were applied to normalize the data and improve the performance of certain algorithms.
+
+Handling Categorical Variables: Categorical variables were transformed into dummy variables. This process converts each categorical variable into multiple binary variables, representing the presence or absence of a category. Dummy variables enable the utilization of categorical data in machine learning algorithms.
+
 Algorithms Explored:
 
 This project explores the performance of several machine learning algorithms for predicting house sale prices. The algorithms implemented and compared are:
