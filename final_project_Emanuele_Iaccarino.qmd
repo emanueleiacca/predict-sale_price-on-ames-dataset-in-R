@@ -1,0 +1,1715 @@
+---
+title: "Final project"
+author: Emanuele Iaccarino
+editor: visual
+format: 
+  html: 
+    toc: true
+    html-math-method: katex
+    css: styles.css
+  revealjs:
+    theme: sky
+    fontsize: 1.75em
+    preview-links: true
+    transition: fade
+---
+
+# about the project
+
+## project aim {style="vertical-align: middle;"}
+
+::: {style="color: indianred; font-size: 200%; text-align: center;"}
+Predict sale price (*Sale_Price*) for houses in Ames, Iowa
+:::
+
+### Il dataset
+
+```{r,message=FALSE,warning=FALSE,echo=TRUE}
+library(tidyverse)
+library(tidymodels)
+library(revealjs)
+library(dplyr)
+library(ggplot2)
+library(ISLR)
+library(kableExtra)
+library(glmnet)
+library(magrittr)
+library(httpuv)
+modeldata::ames %>% glimpse
+view(ames)
+ knitr::include_graphics
+
+```
+
+```{r}
+#diamo un occhio ai dati
+head(ames)
+str(ames)
+summary(ames)
+```
+
+```{r }
+missing_data=colSums(is.na(ames))
+missing_data
+#non ci sono valori mancanti
+```
+
+### Interpretazione
+
+Riassunto delle variabili del modello per facilitarne l'interpretazione:
+
+-   SalePrice: il prezzo di vendita della casa in dollari.
+
+-   MSSubClass: la classe di abitazione, che pu? essere una singola unit? residenziale, una porzione di una casa a schiera, un appartamento, ecc.
+
+-   MSZoning: la zona in cui si trova la casa, ad esempio R esidenziale, C commercio, I industria, ecc.
+
+-   LotFrontage: la lunghezza del marciapiede lungo la strada su cui si trova la casa.
+
+-   LotArea: la dimensione del terreno su cui si trova la casa, in piedi quadrati.
+
+-   Street: il tipo di strada su cui si trova la casa, come pavimentata o non pavimentata.
+
+-   Alley: se c'? un vicolo dietro la casa o meno.
+
+-   LotShape: la forma del terreno su cui si trova la casa, ad esempio rettangolare, irregolare, ecc.
+
+-   LandContour: il profilo del terreno su cui si trova la casa, ad esempio pianeggiante, in pendenza, ecc.
+
+-   Utilities: i servizi di utilit? disponibili per la casa, come l'acqua, l'elettricit?, il gas, ecc.
+
+-   LotConfig: la configurazione del terreno su cui si trova la casa, ad esempio angolo, fronte strada, dentro isolato, ecc.
+
+-   LandSlope: la pendenza del terreno su cui si trova la casa, ad esempio pianeggiante, in pendenza, ecc.
+
+-   Neighborhood: il quartiere in cui si trova la casa.
+
+-   Condition1: la posizione della casa rispetto a importanti strade o ferrovie.
+
+-   Condition2: la posizione della casa rispetto a importanti strade o ferrovie (se ci sono pi? di una)
+
+-   BldgType: il tipo di edificio, ad esempio singola unit? residenziale, porzione di una casa a schiera, appartamento, ecc.
+
+-   HouseStyle: lo stile architettonico della casa.
+
+-   OverallQual: la qualit? generale della casa, valutata su una scala da 1 a 10.
+
+-   OverallCond: la condizione generale della casa, valutata su una scala da 1 a 10.
+
+-   YearBuilt: l'anno in cui ? stata costruita la casa.
+
+-   YearRemodAdd: l'anno in cui ? stata ristrutturata l'ultima volta la casa.
+
+-   RoofStyle: lo stile del tetto.
+
+-   RoofMatl: il materiale utilizzato per il tetto.
+
+-   Exterior1st: il materiale utilizzato per il rivestimento esterno principale della casa.
+
+-   Exterior2nd: il materiale utilizzato per il rivestimento esterno secondario della casa.
+
+-   MasVnrType: il tipo di materiale utilizzato per la decorazione della facciata, come intonaco, mattoni, ecc.
+
+-   MasVnrArea: la dimensione dell'area decorata della facciata, in piedi quadrati.
+
+-   ExterQual: la qualit? del rivestimento esterno della casa, valutata su una scala da 1 a 10.
+
+-   ExterCond: la condizione del rivestimento esterno della casa, valutata su una scala da 1 a 10.
+
+-   Foundation: il tipo di fondazione della casa, ad esempio in cemento, in muratura, ecc.
+
+-   BsmtQual: la qualit? del seminterrato, valutata su una scala da 1 a 10.
+
+-   BsmtCond: la condizione del seminterrato, valutata su una scala da 1 a 10.
+
+-   BsmtExposure: l'esposizione del seminterrato, ad esempio se ? esposto o meno.
+
+-   BsmtFinType1: lo stato di finitura del seminterrato, ad esempio finito, parzialmente finito, ecc.
+
+-   BsmtFinSF1: la dimensione dell'area finita del seminterrato, in piedi quadrati.
+
+-   BsmtFinType2: lo stato di finitura del seminterrato (se ci sono pi? di una zona), ad esempio finito, parzialmente finito, ecc.
+
+-   BsmtFinSF2: la dimensione dell'area finita del seminterrato (se ci sono pi? di una zona), in piedi quadrati.
+
+-   BsmtUnfSF: la dimensione dell'area non finita del seminterrato, in piedi quadrati.
+
+-   TotalBsmtSF: la dimensione totale dell'area del seminterrato, in piedi quadrati.
+
+-   Heating: il sistema di riscaldamento utilizzato nella casa.
+
+-   HeatingQC: la qualit? del sistema di riscaldamento, valutata su una scala da 1 a 10.
+
+-   CentralAir: se c'? aria condizionata centralizzata nella casa o meno.
+
+-   Electrical: il sistema elettrico utilizzato nella casa.
+
+-   1stFlrSF: la dimensione dell'area del primo piano, in piedi quadrati.
+
+-   2ndFlrSF: la dimensione dell'area del secondo piano, in piedi quadrati.
+
+-   LowQualFinSF: la dimensione dell'area finita di scarsa qualit?, in piedi quadrati.
+
+-   Gr Liv Area: Superficie abitabile al piano terra in piedi quadrati.
+
+-   Bsmt_Full_Bath : numero di bagni completi nel seminterrato
+
+-   Bsmt_Half_Bath : numero di bagni non completi nel seminterrato (contiene lavandino e gabinetto, ma non la doccia)
+
+-   Full Bath: Numero di bagni completi nella casa.
+
+-   Half Bath: Numero di bagni con solo lavandino e toilette nella casa.
+
+-   Bedroom AbvGr: Numero di camere da letto al piano superiore.
+
+-   Kitchen AbvGr: Numero di cucine al piano superiore.
+
+-   TotRms AbvGrd: Numero totale di stanze al piano superiore.
+
+-   Garage Type: Tipo di garage (ad esempio, annesso, indipendente, nessun garage, ecc.).
+
+-   Garage Finish": Livello di finitura del garage (ad esempio, finito, grezzo, nessuna finitura, ecc.).
+
+-   Garage Cars: Numero di auto che possono essere parcheggiate nel garage.
+
+-   Garage Area: Superficie del garage in piedi quadrati.
+
+-   Garage Qual: Valutazione della qualit? del garage, in una scala da 1 a 10.
+
+-   Garage Cond: Valutazione della condizione del garage, in una scala da 1 a 10
+
+-   Paved Drive: Indica se il vialetto di ingresso ? pavimentato.
+
+-   Wood Deck SF: Superficie del ponte in legno in piedi
+
+-   Open Porch SF: Superficie della veranda aperta in piedi quadrati.
+
+-   Enclosed Porch: Superficie della veranda chiusa in piedi quadrati.
+
+-   3Ssn Porch: Superficie della veranda a tre stagioni in piedi quadrati.
+
+-   Screen Porch: Superficie della veranda con schermi in piedi quadrati.
+
+-   Pool Area: Superficie della piscina in piedi quadrati.
+
+-   Pool QC: Valutazione della qualit? della piscina, in una scala da 1 a 10.
+
+-   Fence: Valutazione della qualit? del recinto intorno alla casa, in una scala da 1 a 10.
+
+-   Misc Feature: Altre caratteristiche della casa (ad esempio, ascensore, ripostiglio, ecc.).
+
+-   Misc Val: Valore in dollari delle caratteristiche elencate in "Misc Feature".
+
+-   Mo Sold: Mese in cui la casa ? stata venduta.
+
+-   Yr Sold: Anno in cui la casa ? stata venduta.
+
+-   SalePrice: Prezzo di vendita della casa in dollari.
+
+-   Sale Condition: Condizione della vendita (ad esempio, vendita sopra il valore di mercato, vendita sotto il valore di mercato, ecc
+
+-   Longitude
+
+-   Latitude
+
+# Variabile di Risposta
+
+INIZIAMO ANALIZZANDO LA VARIABILE DI RISPOSTA
+
+```{r}
+ggplot(ames, aes(x = Sale_Price)) + 
+  geom_histogram(bins = 50, col= "white")
+#vediamo che il prezzo delle case ? molto variabile, dalle statistiche descrittive notiamo che va da un minimo di 12789 a un massimo 755500, con media di 160000. Per abbattere la varianza bisogna trasformare la variabile esplicativa y(Sale_price) in logaritmo
+
+```
+
+#### Trasformiamo la variabile di risposta in log
+
+```{r}
+library(ggplot2)
+sale_price_log=log(ames$Sale_Price)
+ggplot(ames, aes(x = sale_price_log)) + 
+  geom_histogram(bins = 50, col= "white")
+library(ggplot2)
+
+ggplot(data = ames) + 
+  geom_qq(mapping = aes(sample = Sale_Price)) + 
+  ggtitle("Q-Q Plot for Sale_Price")
+
+ggplot(data = ames) + 
+  geom_qq(mapping = aes(sample = sale_price_log)) + 
+  ggtitle("Q-Q Plot for sale_price_log")
+#confermiamo quanto detto in precedenza
+
+```
+
+# Analisi variabili Continue
+
+## Scatterplot
+
+```{r}
+#CREO DEGLI SCATTERPLOT PER OGNI VARIABILE RISPETTO ALLA Y(SALE_PRICE) ATTRAVERSO UN CICLO FOR PER NON RIPETERE X VOLTE IL PROCESSO
+numeric_vars <- sapply(ames, is.numeric)
+ames_numeric <- ames[, numeric_vars] #prendo solo le variabili numeriche
+#ora creo i plot attraverso il ciclo for
+for (var in names(ames_numeric)){
+  plot=ggplot(ames_numeric, aes_string(x = var, y = "Sale_Price")) +
+    geom_point() + 
+    geom_smooth(method = "lm") +
+    ggtitle(paste0(var, " vs Sale_Price")) +
+    xlab(var) +
+    ylab("Sale_Price")
+  print(plot)
+}
+```
+
+dai grafici noto che queste variabili non sembrano avere una relazione lineare con la variabili di risposta Sale_price:
+
+\`LotFrontage\`
+
+\`BsmtHalfBath\`
+
+\`BedroomAbvGr\`
+
+\`KitchenAbvGr\`
+
+\`OpenPorchSF\`
+
+\`PoolArea\`
+
+\`3SsnPorch\`\`
+
+\`ScreenPorch\`
+
+\`MiscVal\`
+
+\`MoSold\`
+
+\`YrSold\`
+
+\`Longitude\`
+
+\`Latitude\`
+
+Ne tengo conto ma prima di rimuoverle preferisco effettuare un double check
+
+## Correlazione tra variabili
+
+#### HeatMap
+
+ci diamo un idea veloce della correlazione tra variabili attraverso questa heatmap, dove le tonalit? si fanno piu' forti quando la correlazione ? piu' alta
+
+https://www.geeksforgeeks.org/how-to-create-correlation-heatmap-in-r/
+
+```{r, fig.height=20, fig.width=20 }
+library(corrplot)
+heatmap.cor.lab <- function(df){
+  df %>%
+    keep(is.numeric) %>%
+    drop_na() %>%
+    cor %>%
+    corrplot(addCoef.col = 'white',
+             number.digits = 2,
+             number.cex = 0.5,
+             method = 'square')
+}
+ames_numeric %>% heatmap.cor.lab
+```
+
+#### Multicollinearit? Test
+
+```{r }
+library(caret)
+#identifico le variabili ad alta correlazione
+corr_matrix <- cor(ames_numeric)
+high_corr <- findCorrelation(corr_matrix, cutoff = 0.8) #mi restituisce le variabile con correlazione maggiore di 0,8, la soglia che ritengo significativa
+high_corr_vars <- colnames(ames_numeric)[high_corr]
+high_corr_vars #dato che ci veniva restituito solo il numero della variabile ho aggiunto il codice per ottenere il nome della variabile
+#riguardo la matrice di correlazione vedo che:
+#garage cars ? altamente correlato con garage area
+#First_Flr_SF ? altamente correlato con Total_Bsmt_SF
+#Gr_Liv_Area ? altamente correlato con TotRms_AbvGrd
+
+#per scegliere quale levare ci basiamo attraverso la correlazione con la y, ovviamente leviamo le meno correlate
+library(dplyr)
+high_corr_vars <- c(high_corr_vars, "Garage_Area", "Total_Bsmt_SF", "TotRms_AbvGrd") 
+for(i in 1:length(high_corr_vars)){
+    print(paste(high_corr_vars[i], "and", "Sale_Price", ":", cor(ames_numeric[,high_corr_vars[i]], ames_numeric$Sale_Price)))
+  }
+```
+
+```{r}
+#rimuoviamo quindi TotRms_AbvGrd, Total_Bsmt_SF e Garage_Area 
+ames_cleaned <- ames%>% dplyr::select(-TotRms_AbvGrd, -Total_Bsmt_SF, -Garage_Area)
+ames_numeric <- ames_numeric %>% dplyr::select(-TotRms_AbvGrd, -Total_Bsmt_SF, -Garage_Area)
+```
+
+## Outliers
+
+```{r }
+#identifico i valori outlier e li elimino dal mio dataset
+z_score <- (ames_cleaned$Sale_Price - mean(ames_cleaned$Sale_Price)) / sd(ames_cleaned$Sale_Price)
+outliers <- which(abs(z_score) > 3 | abs(z_score) < -3)
+outliers
+ames_cleaned <- ames_cleaned[-outliers, ]
+ames_numeric <- ames_numeric[-outliers, ]
+
+#le osservazioni passano da 2930 a 2885
+```
+
+## Creazione Dummy
+
+dando un occhiata a ames_numeric noto una forte presenza di 0 per alcune variabili, per cui potrei trasformarle in dummy 0,1
+
+#### Individuo le variabili da trasformare
+
+```{r}
+# Creo una lista di variabili
+var_list <- names(ames_numeric)
+
+# for loop per guardare ogni variabile
+for (i in var_list) {
+  # vedo ogni variabile quanti 0 contiene
+  zero_values <- which(ames_numeric[[i]] == 0)
+  if(length(zero_values) > 0) {
+    print(paste0(i," contiene ",length(zero_values)," zero "))
+  } else {
+    print(paste0(i," non contiene 0 "))
+  }
+}
+#notiamo alcune variabili che contengono sopra i 1000 zeri, per cui preferisco trasformarli in dummy per rendere i miei dati piu facilmente leggibili
+```
+
+### Creo le Dummy
+
+Creo dummy per le variabili che contengo un gran numero di 0
+
+```{r }
+for (i in var_list) {
+  # vedo se la variabile contiene + di 1000 zero
+  #ho messo come soglia 1000 perch? ? piu? di 1/3 delle osservazioni ed ? quindi un valore che ritengo significativo
+  zero_values <- which(ames_numeric[[i]] == 0)
+  if(length(zero_values) > 1000) {
+    # Creo una nuova colonna con lo stesso nome della variabile originaria ma che inizia con "dummy_i" per le variabili che rispettano la condizione
+    ames_cleaned[paste0("dummy_", i)] <- ifelse(ames_cleaned[[i]] == 0, 0, 1)
+    print(paste0(i," per questa variabile ho creato una dummy"))
+  } 
+}  
+
+#per esempio pool area diventa: ha una piscina? 1=SI, 0=NO
+#rivestimento muro si no,secondo piano si no,secondo seminterrato si no,seminterrato bagno completo si no,seminterrato mezzo bagno si no,mezzo bagno si no, camino si no,ponte di legno si no,aperta si no,veranda chiusa si no,veranda a 3 stagioni si no,veranda con schermi si no,piscina si no,misc feature ci sono? si no
+```
+
+per esempio pool area diventa: ha una piscina? 1=SI, 0=NO
+
+rivestimento muro si no,secondo piano si no,secondo seminterrato si no,seminterrato bagno completo si no,seminterrato mezzo bagno si no,mezzo bagno si no, camino si no,ponte di legno si no,aperta si no,veranda chiusa si no,veranda a 3 stagioni si no,veranda con schermi si no,piscina si no,misc feature ci sono? si no
+
+creo inoltre una dummy per vedere se la casa ? stata rimodellata o meno
+
+```{r }
+ames_cleaned <- ames_cleaned %>% mutate(remodeled = ifelse(Year_Built != Year_Remod_Add, 1, 0))
+```
+
+#### Dummy da tenere
+
+voglio vedere se le dummy hanno una correlazione maggiore con la y rispetto alla variabili originaria
+
+innanzitutto mi creo un dataset che prende le variabili originali e le dummy da loro create
+
+```{r}
+var_names <- names(ames_cleaned)
+
+#creo una lista dove mettere le variabili selezionate
+selected_vars <- list()
+
+# for loop
+for (var in var_names) {
+    # seleziono le variabili non dummy
+    if (!grepl("^dummy_", var)) {
+        # e vedo se esiste una stessa variabile versione dummy nel dataset
+        if (paste0("dummy_", var) %in% var_names) {
+            # le seleziono quindi entrambe
+            selected_vars[[var]] <- ames_cleaned[[var]]
+            selected_vars[[paste0("dummy_", var)]] <- ames_cleaned[[paste0("dummy_", var)]]
+        }
+    }
+}
+
+# Converto la lista in un dataframe
+selected_vars <- as.data.frame(selected_vars)
+```
+
+seleziono quelle con la correlazione maggiore tra ognuna, quelle scartate le rimuovo dal dataset ames_cleaned
+
+```{r }
+#creo una lista dove mettere le variabili selezionate
+final_vars <- list()
+
+#for loop
+for (var in names(selected_vars)) {
+    # seleziono le variabili non dummy
+    if (!grepl("^dummy_", var)) {
+        # Calcolo la correlatione tra la variabile originale e Sale_Price
+        cor_var <- cor(selected_vars[[var]], ames_cleaned$Sale_Price)
+        #  Calcolo la correlatione tra la variabile dummy e Sale_Price
+        cor_dummy <- cor(selected_vars[[paste0("dummy_", var)]], ames_cleaned$Sale_Price)
+        # paragono la correlazione tra le due e ovviamente tengo la piu' alta
+        if (cor_var > cor_dummy) {
+            final_vars[[var]] <- selected_vars[[var]]
+        } else {
+            final_vars[[paste0("dummy_", var)]] <- selected_vars[[paste0("dummy_", var)]]
+        }
+    }
+}
+final_vars <- names(final_vars)
+#creo removed_vars che contiene i nomi delle variabili che hanno correlazione minore rispetto alle dummy o viceversa
+removed_vars <- selected_vars %>% dplyr::select(-final_vars)
+# rimuovo removed_vars dataframe da ames_cleaned dataset
+#per farlo prendo solo i nomi delle variabili dal dataframe
+removed_vars=names(removed_vars)
+ames_cleaned <- ames_cleaned %>% dplyr::select(-removed_vars)
+```
+
+adesso nel dataset ames_cleaned abbiamo rimosso 6 variabili, sostituendole con le loro dummy
+
+## Trasformazioni Logaritmiche
+
+### Pulizia Dataset Ames_numeric
+
+rimuovo le variabili precedentemente analizzate e trasformate in dummy
+
+```{r }
+#creo una lista dove mettere le variabili selezionate
+vars_to_remove <- c()
+
+# for loop
+for (i in var_list) {
+  # cerco le variabili con + di 1000 zeri come prima
+  zero_values <- which(ames_numeric[[i]] == 0)
+  if(length(zero_values) > 1000) {
+    # creo un nuovo vars to remove per rimuovere dal dataset numeric
+    vars_to_remove <- c(vars_to_remove, i)
+    print(paste0(i," rimuovo dal dataset"))
+  } 
+}
+
+#rimuovo dal dataset queste variabili
+ames_numeric <- ames_numeric[, !(names(ames_numeric) %in% vars_to_remove)]
+```
+
+VOGLIO APPLICARE IL LOG SULLE VARIABILI DOVE NECESSARIO
+
+Rimuovo le variabili year perch? non posso farci i log, cosi come le variabili riguardanti le coordinate
+
+Inoltre rimuovo le variabili con media bassa che indicano variabili di tipo conteggio( per esempio numero camere da letto)
+
+```{r }
+# lista di variabili che iniziano con year
+vars_to_remove <- names(ames_numeric)[grep("^Year", names(ames_numeric))]
+
+#le rimuovo da ames_numeric
+ames_numeric <- ames_numeric[ , !(names(ames_numeric) %in% vars_to_remove)]
+
+ames_numeric <- ames_numeric[ , names(ames_numeric) != "Latitude"]
+ames_numeric <- ames_numeric[ , names(ames_numeric) != "Longitude"]
+
+
+ames_quant <- data.frame()
+#rimuovo le variabili di conteggio
+# le identifico attraverso la media < 10
+vars_to_remove <- names(ames_numeric)[which(sapply(ames_numeric, mean) < 10)]
+
+#le rimuovo da ames_numeric
+ames_numeric <- ames_numeric[ , !(names(ames_numeric) %in% vars_to_remove)]
+
+```
+
+#### Preparazione al Log
+
+nelle 6 variabili rimaste c'? comunque presenza di 0 che devo modificare perch? il log di 0 da -inf: aggiungo quindi +1 ai zero values
+
+```{r }
+for (i in var_list) {
+#controllo se le variabili contengono zeri
+  zero_values <- which(ames_numeric[[i]] == 0)
+  if(length(zero_values) > 0) {
+    ames_numeric[[i]][zero_values] <- ames_numeric[[i]][zero_values] + 1
+    #aggiungo 1 quando rilevo uno zero
+  }
+}
+any(ames_numeric == 0)
+missing_data=colSums(is.na(ames_numeric))
+missing_data
+#non ci sono valori mancanti(double check)
+#aggiungo 1 ai valori =0 per applicare il log, avrei preferito usare un valore piu piccolo tipo 0,0001 ma mi dava problemi nelle variabili integer
+```
+
+#### Applico il Log
+
+applico il logaritmo dove necessario
+
+ho utilizzato l'indice di asimmetria per valutare se era il caso o meno di applicare il log, allego fonte:
+
+A skewness value greater than 1 or less than -1 indicates a highly skewed distribution. A value between 0.5 and 1 or -0.5 and -1 is moderately skewed. A value between -0.5 and 0.5 indicates that the distribution is fairly symmetrical.
+
+in a right-skewed distribution you have a few very large values. The log transformation essentially reels these values into the center of the distribution making it look more like a Normal distribution
+
+https://www.programmingr.com/statistics/skewness/
+
+```{r}
+library(moments)
+#applico il log quando rilevo asimmetria >1
+for (col in colnames(ames_numeric)) {
+    if (is.numeric(ames_numeric[[col]])) {
+        if (abs(skewness(ames_numeric[[col]],na.rm = TRUE)) > 1) {
+            ames_numeric[[paste0(col,"_log")]] <- log10(ames_numeric[[col]])
+        }
+    }
+}
+#seleziono le variabili trasformate in log
+ames_log <- ames_numeric[, grep("_log$", names(ames_numeric))]
+# le aggiungo al dataset originale
+ames_cleaned <- bind_cols(ames_cleaned, ames_log)
+
+#dato che il log di sale_price ? significativo, lo sostituisco con sale_price dato che non posso averli entrambi
+ames_cleaned <- ames_cleaned[ , !(names(ames_cleaned) %in% "Sale_Price")]
+```
+
+#### Confronto Grafico
+
+confrontiamo i log ottenuti delle variabili esplicative con la variabile di risposta
+
+```{r}
+library(ggplot2)
+#LOT_AREA_LOG
+# Creo un dataframe con le due variabili in considerazione
+compare_df <- data.frame(Lot_Area_log = ames_cleaned$Lot_Area_log, 
+                         Sale_Price_log = ames_cleaned$Sale_Price_log)
+
+# Creo lo scatterplot
+ggplot(compare_df, aes(x = Lot_Area_log, y = Sale_Price_log)) + 
+    geom_point() +
+    ggtitle("Comparison of Lot_Area_log and Sale_Price_log") +
+    xlab("Lot_Area_log") + 
+    ylab("Sale_Price_log")
+
+library(ggplot2)
+#LOT_AREA
+# Creo un dataframe con le due variabili in considerazione
+compare_df <- data.frame(Lot_Area = ames_cleaned$Lot_Area, 
+                         Sale_Price_log = ames_cleaned$Sale_Price_log)
+
+# Creo lo scatterplot
+ggplot(compare_df, aes(x = Lot_Area, y = Sale_Price_log)) + 
+    geom_point() +
+    ggtitle("Comparison of Lot_Area and Sale_Price_log") +
+    xlab("Lot_Area") + 
+    ylab("Sale_Price_log")
+
+```
+
+```{r }
+library(ggplot2)
+
+#First_Flr_SF_log
+
+#dataframe
+compare_df <- data.frame(First_Flr_SF_log = ames_cleaned$First_Flr_SF_log, 
+                         Sale_Price_log = ames_cleaned$Sale_Price_log)
+
+# scatterplot
+ggplot(compare_df, aes(x = First_Flr_SF_log, y = Sale_Price_log)) + 
+    geom_point() +
+    ggtitle("Comparison of First_Flr_SF_log and Sale_Price_log") +
+    xlab("First_Flr_SF_log") + 
+    ylab("Sale_Price_log")
+
+library(ggplot2)
+#First_Flr_SF
+#dataframe
+compare_df <- data.frame(First_Flr_SF = ames_cleaned$First_Flr_SF, 
+                         Sale_Price_log = ames_cleaned$Sale_Price_log)
+
+#scatter
+ggplot(compare_df, aes(x = First_Flr_SF, y = Sale_Price_log)) + 
+    geom_point() +
+    ggtitle("Comparison of First_Flr_SF and Sale_Price_log") +
+    xlab("First_Flr_SF") + 
+    ylab("Sale_Price_log")
+#il grafico con il log sembra peggiorare rispetto a quello con la variabile originaria. Ne tengo conto ma prima di eliminarlo preferisco fare un doppio check
+```
+
+```{r }
+library(ggplot2)
+#Gr_Liv_Area_log
+#dataframe 
+compare_df <- data.frame(Gr_Liv_Area_log = ames_cleaned$Gr_Liv_Area_log, 
+                         Sale_Price_log = ames_cleaned$Sale_Price_log)
+
+#scatter plot
+ggplot(compare_df, aes(x = Gr_Liv_Area_log, y = Sale_Price_log)) + 
+    geom_point() +
+    ggtitle("Comparison of Gr_Liv_Area_log and Sale_Price_log") +
+    xlab("Gr_Liv_Area_log") + 
+    ylab("Sale_Price_log")
+
+library(ggplot2)
+#Gr_Liv_Area
+#dataframe
+compare_df <- data.frame(Gr_Liv_Area = ames_cleaned$Gr_Liv_Area, 
+                         Sale_Price_log = ames_cleaned$Sale_Price_log)
+
+#scatter plot
+ggplot(compare_df, aes(x = Gr_Liv_Area, y = Sale_Price_log)) + 
+    geom_point() +
+    ggtitle("Comparison of Gr_Liv_Area and Sale_Price_log") +
+    xlab("Gr_Liv_Area") + 
+    ylab("Sale_Price_log")
+#il grafico con il log sembra peggiorare rispetto a quello con la variabile originaria. Ne tengo conto ma prima di eliminarlo preferisco fare un doppio check
+```
+
+## Correlazione con la y
+
+se non rientrano nella condizione le escludo dal dataset
+
+```{r }
+# Selezioniamo solo le variabili qualitative
+#visualizzo le variabili piu' importanti attraverso la matrice di correlazione con la variabile di risposta y
+numeric_vars2 <- sapply(ames_cleaned, is.numeric)
+ames_c_numeric <- ames_cleaned[, numeric_vars2]
+corr_matrix2 <- cor(ames_c_numeric)
+corr_target <- corr_matrix2["Sale_Price_log",]
+corr_target_sorted <- sort(corr_target, decreasing = TRUE)
+corr_target_sorted
+# Identify indices of variables with correlation greater than or equal to 0.30 or less than or equal to -0.30
+ames_c_corr <- names(ames_c_numeric[,which(corr_target >= 0.30 | corr_target <= -0.30)])
+ames_pocacorrelazione <- ames_c_numeric[ , !(names(ames_c_numeric) %in% ames_c_corr)]
+
+ames_pn=names(ames_pocacorrelazione)
+ames_cleaned <- ames_cleaned[ , !(names(ames_cleaned) %in% ames_pn)]
+#rimuovo le variabili con poco correlate con la y precedentemente calcolate
+#inoltre decido arbitrariamente di rimuovere le variabili riguardo le coordinate perch? ritengo la loro correlazione spuria e mi attengo a quanto visto nei grafici mostrati precedentemente
+ames_cleaned <- ames_cleaned[,-which(colnames(ames_cleaned) %in% c("Longitude", "Latitude"))]
+#per quanto riguarda le variabili trasformate in log, vedo che sono maggiormente correlate(anche se leggermente) alla y rispetto alle variabili originarie, per cui elimino quest'ultime
+ames_cleaned <- ames_cleaned[,-which(colnames(ames_cleaned) %in% c("Lot_Area", "First_Flr_SF","Gr_Liv_Area"))]
+
+```
+
+# Analisi variabili Categoriche
+
+```{r }
+# Selezioniamo solo le variabili qualitative
+ames_qual <- ames_cleaned %>% select_if(is.factor)
+```
+
+## Distribuzioni di Frequenza
+
+```{r }
+for(name in colnames(ames_qual)) {
+  x <- ames_qual[[name]]
+  print(paste0("Analizzando la variabile: ",name))
+  tab <- table(x)
+  print(tab)
+  barplot(tab, main = paste0("Frequency of ", name))
+}
+```
+
+## Boxplot
+
+creo dei Boxplot per tutte le variabili qualitative per farmi un idea della relazione con la y
+
+```{r }
+ames_qual <- cbind(ames_qual, ames_cleaned$Sale_Price_log)
+
+for(i in names(ames_qual)){
+if(is.factor(ames_qual[,i])){
+plot_data <- data.frame(ames_qual[,i],ames_cleaned$Sale_Price_log)
+print(ggplot(plot_data, aes(x = ames_qual[,i], y = ames_cleaned$Sale_Price_log)) +
+geom_boxplot()+
+ggtitle(paste0(i," vs log(Sale_Price)"))+
+xlab(i)+
+ylab("log(Sale_Price)"))
+}}
+```
+
+Variabili che dai boxplot sembrano poco correlate con la y:
+
+LotShape
+
+LandContour
+
+LotConfig
+
+LandSlope
+
+Condition1
+
+PavedDrive
+
+Fence
+
+Misc_Feature
+
+per aiutarci nell'analisi delle variabili categoriche e per semplificare i modelli che illustrer? piu' tardi trasformer? le variabili categoriche in dummy
+
+Prima di procedere con l'analisi delle variabili categoriche voglio mostrare graficamente:
+
+## Interazione tra variabili continue e categoriche
+
+nel caso di garage
+
+```{r }
+ggplot(data = ames_cleaned, aes(x = Garage_Cars, y = Sale_Price_log)) +
+geom_point() + facet_wrap(~ Garage_Type) +
+geom_smooth(method = 'lm')
+```
+
+```{r }
+ggplot(data = ames_cleaned, aes(x = Garage_Cars, y = Sale_Price_log)) +
+geom_point() + facet_wrap(~ Garage_Cond) +
+geom_smooth(method = 'lm')
+```
+
+```{r}
+ggplot(data = ames_cleaned, aes(x = Garage_Cars, y = Sale_Price_log)) +
+geom_point() + facet_wrap(~ Garage_Finish) +
+geom_smooth(method = 'lm')
+```
+
+CONTINUIAMO CON L'ANALISI DELLE VARIABILI CATEGORICHE
+
+## Creazione delle Dummy
+
+```{r }
+# Creiamo un nuovo dataset vuoto con le stesse dimensioni del dataset originale
+dummies <- data.frame(matrix(nrow = nrow(ames_cleaned), ncol = 0))
+
+# identifichiamo gli indici delle colonne con variabili qualitative
+qual_vars <- which(sapply(ames_cleaned, is.factor))
+
+
+# ciclo for per trasformare le colonne in dummies
+for (col in names(ames_cleaned)[qual_vars]) {
+  
+ # Creiamo la matrice di modello utilizzando il nuovo dataset
+matrix_dummies <- model.matrix(as.formula(paste0(col," ~ .")),ames_cleaned)
+
+}
+  # aggiungiamo le colonne dummies al dataset vuoto
+  dummies <- cbind(dummies, matrix_dummies)
+# Aggiungiamo le colonne dummies al dataset originale
+ames_cleaned <- cbind(ames_cleaned, dummies)
+d=colSums(dummies)
+c=length(d)
+c #stampo il numero di dummy create
+#rimuovo le variabili originali che ho trasformato in dummy dal dataset
+ames_cleaned <- subset(ames_cleaned,select=-c(qual_vars))
+library(dplyr)
+ames_cleaned <- ames_cleaned %>% 
+  select_if(function(x) {!is.factor(x)})
+
+```
+
+### Seleziono le Dummy piu' importanti
+
+```{r }
+# Selezioniamo solo le variabili qualitative
+#visualizzo le variabili piu' importanti attraverso la matrice di correlazione con la variabile di risposta y
+numeric_vars2 <- sapply(ames_cleaned, is.numeric)
+ames_c_numeric <- ames_cleaned[, numeric_vars2]
+corr_matrix2 <- cor(ames_c_numeric)
+corr_target <- corr_matrix2["Sale_Price_log",]
+corr_target_sorted <- sort(corr_target, decreasing = TRUE)
+corr_target_sorted
+# identifico le variabili con correlazione > di 0,3 o < di -0,3
+ames_c_corr <- names(ames_c_numeric[,which(corr_target >= 0.3 | corr_target <= -0.3)])
+ames_pocacorrelazione <- ames_c_numeric[,!(colnames(ames_cleaned) %in%ames_c_corr)]
+ames_pn=names(ames_pocacorrelazione)
+ames_cleaned <- ames_cleaned[,!(colnames(ames_cleaned) %in% ames_pn)]
+```
+
+dando un occhiata al dataset noto che alcune colonne gi? esistenti sono state ricreate
+
+```{r}
+# rimuoviamo le colonne create 2 volte(finiscono tutte con .1)
+ames_cleaned <- subset(ames_cleaned, select = -grep("\\.1$", names(ames_cleaned)))
+str(ames_cleaned)
+
+```
+
+rimuovo le variabili tra loro altamente correlate
+
+```{r}
+library(caret)
+numeric_vars <- sapply(ames_cleaned, is.numeric)
+ames_numeric <- ames_cleaned[, numeric_vars]
+#identifico le variabili ad alta correlazione
+corr_matrix <- cor(ames_numeric)
+high_corr <- findCorrelation(corr_matrix, cutoff = 0.8) #mi restituisce le variabile con correlazione maggiore di 0,8, la soglia che ritengo significativa
+high_corr_vars <- colnames(ames_numeric)[high_corr]
+high_corr_vars #dato che ci veniva restituito solo il numero della variabile ho aggiunto il codice per ottenere il nome della variabile
+#riguardo la matrice di correlazione vedo che:
+#garage cars ? altamente correlato con garage area
+#First_Flr_SF ? altamente correlato con Total_Bsmt_SF
+#Gr_Liv_Area ? altamente correlato con TotRms_AbvGrd
+ames_cleaned <- ames_cleaned[, -which(colnames(ames_cleaned) %in% high_corr_vars)]
+
+```
+
+Terminata la fase di EDA passo alle
+
+# REGRESSIONI
+
+## BEST SUBSET SELECTION
+
+utilizzo l'approccio TIDY:
+
+Data preparation tidy
+
+```{r }
+library(janitor)
+ames_cleaned = ames_cleaned %>% as_tibble() 
+ames_cleaned=ames_cleaned %>% clean_names()
+```
+
+Cross validation splits tidy
+
+Split the data into training and test, then split the training set into 10 folds
+
+```{r}
+k=10
+set.seed(222)
+main_split=initial_split(ames_cleaned, prop=4/5)
+ames_train=training(main_split)
+ames_test=testing(main_split)
+ames_flds = vfold_cv(data=ames_cleaned,v=k)
+
+```
+
+Training and test for each fold (e.g. fold 1, fold 2, fold 3, fold 4 for training; fold 5 for testing
+
+```{r }
+tidy_data_structure =  ames_flds %>%   
+  mutate(
+  train = map(.x=splits,~training(.x)),
+  validate = map(.x=splits,~testing(.x))
+  )
+tidy_data_structure
+```
+
+Fit models of different size on each fold-based training set, obtained above
+
+```{r }
+library(leaps)
+tidy_data_structure = tidy_data_structure %>% 
+  mutate(
+  reg_sub_fits = map(.x=train,
+                     .f=~regsubsets(sale_price_log ~.,
+                      data=.x,nvmax = 30,method = "forward"))
+  )
+tidy_data_structure
+```
+
+Pull the matrix containing the predictor values (the \\(\\bf X\\) matrix), note that factors are coded as dummies (as in \\(\\texttt{lm()}\\))
+
+```{r }
+tidy_data_structure = tidy_data_structure %>% 
+  mutate(predictors=map(.x=validate,
+                 .f=~model.matrix(as.formula("sale_price_log~."),as.data.frame(.x)))
+         )
+
+tidy_data_structure
+```
+
+Pull the coefficient estimates, for each test fold and model size
+
+```{r }
+tidy_data_structure = tidy_data_structure %>% 
+  mutate(
+  coefficients=map(.x=reg_sub_fits,~coef(.x,id=1:30))
+  ) 
+tidy_data_structure 
+```
+
+Unnest the coefficients vector
+
+```{r }
+tidy_data_structure = tidy_data_structure %>%
+unnest(coefficients)
+
+tidy_data_structure
+```
+
+For each model, compute the corresponding \\(\\bf X\\) matrix for the test observations
+
+```{r }
+tidy_data_structure = tidy_data_structure %>% 
+ mutate(
+    preds_mat = map2(.x=predictors, .y=coefficients, ~.x[,names(.y)]),
+ )
+tidy_data_structure
+```
+
+Compute \\(\\hat{y}\\).
+
+```{r }
+tidy_data_structure = tidy_data_structure %>% 
+ mutate(
+    preds_mat = map2(.x=predictors, .y=coefficients, ~.x[,names(.y)]),
+    yhat = map2(.x=preds_mat, .y=coefficients, ~.x %*% .y)
+ )
+tidy_data_structure
+```
+
+Compute the squared residuals \\(\\left(y-\\hat{y}\\right)\^{2}\\).
+
+```{r }
+tidy_data_structure = tidy_data_structure %>% 
+ mutate(
+   squared_error = map2(.x=yhat, .y=validate, ~(.x-.y$sale_price_log)^2)
+  )  
+tidy_data_structure %>% dplyr::select(-splits)
+```
+
+Compute the RMSEs
+
+```{r }
+tidy_data_structure = tidy_data_structure %>% 
+  unnest(squared_error) %>%  group_by(id , coefficients) %>%
+  summarise(RMSE=sqrt(mean(squared_error)))
+```
+
+```{r }
+tidy_data_structure
+```
+
+Average over the folds to obtain the cross-validation estimate of RMSE.
+
+```{r }
+tidy_data_structure = tidy_data_structure %>% 
+ mutate(model_size=map(.x=coefficients,~length(.x))) %>%
+  unnest(model_size)
+
+```
+
+Plot the models size versus the CV-RMSE.
+
+```{r }
+tidy_data_structure %>% 
+  group_by(model_size) %>% 
+  summarise(cv_RMSE=mean(RMSE)) %>% 
+ggplot(mapping = aes(x = model_size,y=cv_RMSE))+
+  geom_line()+
+  geom_point(aes(x = model_size[which.min(cv_RMSE)],
+                 y = min(cv_RMSE)),color="red")
+```
+
+Find the best model size.
+
+```{r }
+bss_rmse=tidy_data_structure %>% 
+  group_by(model_size) %>% 
+  summarise(cv_RMSE=mean(RMSE)) %>% 
+  slice(which.min(cv_RMSE))
+BSS_RMSE=bss_rmse$cv_RMSE
+```
+
+## REGRESSIONE RIDGE E LASSO
+
+Eseguo il solito split iniziale, creo la recipe, il modello e il workflow sia per la regressione Ridge che per la regressione Lasso.
+
+Importante e' standardizzare
+
+ho gi? trasformato tutte le variabili categoriche in dummy in precedenza
+
+```{r }
+init_split=initial_split(ames_cleaned,prop=3/4)
+ames_train=training(init_split)
+ames_test=testing(init_split)
+ames_folds = vfold_cv(ames_train,v = 5) 
+
+ames_recipe = recipe(sale_price_log~.,data=ames_train) %>% 
+  step_scale(all_numeric()) %>% 
+  step_dummy(all_nominal())
+
+ames_recipe %>% prep() %>% juice() %>% head() %>% 
+  kable() %>% kable_styling(bootstrap_options = c("striped","hover"),font=8,full_width = FALSE)
+
+ridge_spec = linear_reg(mixture = 0, penalty = tune()) %>% set_engine("glmnet")
+lasso_spec = linear_reg(mixture = 1, penalty = tune()) %>% set_engine("glmnet")
+
+ridge_wflow=workflow() %>% 
+  add_recipe(ames_recipe) %>% 
+  add_model(ridge_spec)
+  
+lasso_wflow=workflow() %>% 
+  add_recipe(ames_recipe) %>% 
+  add_model(lasso_spec)
+
+ridge_lambda_grid = expand_grid(penalty = seq(0,31,length=31))
+lasso_lambda_grid = expand_grid(penalty = seq(0,2,length=31))
+```
+
+Eseguo il fit per ogni valore del parametro
+
+```{r }
+ridge_results = ridge_wflow %>% 
+  tune_grid(grid=ridge_lambda_grid,
+            resamples=ames_folds)
+
+lasso_results = lasso_wflow %>% 
+  tune_grid(grid=lasso_lambda_grid,
+            resamples=ames_folds)
+```
+
+Trascrivo i grafici per entrambe le regressioni e valuto il modello con migliore lambda(o parametro di tuning)
+
+```{r }
+bind_rows(tibble(ridge_results %>% collect_metrics()) %>%mutate(method="ridge"),
+          tibble(lasso_results %>% collect_metrics())%>%mutate(method="lasso")
+) %>%
+  filter(.metric=="rmse" ) %>%
+  ggplot(aes(x=penalty,y = mean,color=method))+geom_line()+ylab("rmse")  +
+  facet_wrap(~method,scales = "free_x") + theme(legend.position="none")
+
+select_best(ridge_results,metric = "rmse")
+select_best(lasso_results,metric = "rmse")
+```
+
+Infine calcolo le stime dei coefficienti Ridge e Lasso col miglior parametro
+
+```{r }
+tuned_ridge = finalize_workflow(x = ridge_wflow, parameters = select_best(ridge_results,metric = "rmse"))
+tuned_lasso = finalize_workflow(x = lasso_wflow, parameters = select_best(lasso_results,metric = "rmse"))
+
+ridge_fit <- last_fit(tuned_ridge,
+                split = init_split)
+
+lasso_fit <- last_fit(tuned_lasso,
+                split = init_split)
+ridge_rmse=ridge_fit %>%
+  collect_metrics()
+lasso_rmse=lasso_fit %>%
+  collect_metrics()
+RIDGE_RMSE=ridge_rmse$.estimate[1]
+  LASSO_RMSE=lasso_rmse$.estimate[1]
+```
+
+## PCA
+
+```{r}
+library(gapminder)
+library("FactoMineR")
+library("tidyverse")
+```
+
+```{r }
+# Calcola i componenti principali utilizzando la funzione prcomp()
+pca.fit = prcomp(ames_train, scale = TRUE)
+
+# Seleziona i primi 10 componenti principali
+pca.train = data.frame(pca.fit$x[,1:10], sale_price_log = ames_train$sale_price_log)
+pca.test = predict(pca.fit, newdata = ames_test)
+pca.test = data.frame(pca.test[,1:10], sale_price_log = ames_test$sale_price_log)
+
+# Utilizza i componenti principali per addestrare un modello di regressione
+pca.lm = lm(sale_price_log ~., data = pca.train)
+pca.pred = predict(pca.lm, newdata = pca.test)
+
+# Calcola l'RMSE
+pca_rmse = sqrt(mean((pca.test$sale_price_log - pca.pred)^2))
+pca_rmse
+
+
+```
+
+PASSIAMO ALLE REGRESSIONI NON LINEARI
+
+## REGRESSION TREE
+
+Split del training test e test set su un dataset costruito per model specification
+
+```{r }
+ames_split <- initial_split(ames_cleaned, 
+                            strata = sale_price_log)
+ames_train <- training(ames_split)
+ames_test  <- testing(ames_split)
+```
+
+creiamo una variabile che contiene uno scheletro di albero di decisione dove dobbiamo fare un processo di tuning sia del costo complessita alfa sia della profondit? dell'albero
+
+```{r }
+tune_spec <- 
+  decision_tree(
+    cost_complexity = tune(),
+    tree_depth = tune()
+  ) %>% 
+  set_engine("rpart") %>% 
+  set_mode("regression")
+
+tune_spec
+```
+
+Siccome vogliamo effettuare un processo di tuning dei parametri di tuning creando due griglie di valori di 5 livelli, quindi 25 possibili combinazioni di valori di taglia dell'albero e penalty di costo complessit?
+
+```{r }
+tree_grid <- grid_regular(cost_complexity(),
+                          tree_depth(),
+                          levels = 5)
+```
+
+avviamo la cross validation del tuning
+
+```{r }
+set.seed(234)
+ames_folds <- vfold_cv(ames_train)
+```
+
+Creiamo il nostro workflow dove aggiungiamo il modello di tuning dei nostri parametri creando appunto di volta in volta per 25 combinazioni dei parametri di tuning un albero che cerchi di partizionare le osservazioni in base alle categorie della variabile y contro tutti i predittori (le altre variabili).
+
+```{r }
+set.seed(345)
+
+tree_wf <- workflow() %>%
+  add_model(tune_spec) %>%
+  add_formula(sale_price_log ~ .)
+
+tree_res <- 
+  tree_wf %>% 
+  tune_grid(
+    resamples = ames_folds,
+    grid = tree_grid
+    )
+```
+
+Visualizziamo i risultati del nostro workflow che nel caso di un problema di classificazione si parla di area della curva roc e tasso di corretta classificazione o accuracy.
+
+```{r }
+tree_res %>% 
+  collect_metrics()
+```
+
+Plottiamo i nostri risultati.
+
+```{r }
+tree_res %>%
+  collect_metrics() %>%
+  mutate(tree_depth = factor(tree_depth)) %>%
+  ggplot(aes(cost_complexity, mean, color = tree_depth)) +
+  geom_line( alpha = 0.6) +
+  geom_point() +
+  facet_wrap(~ .metric, scales = "free", nrow = 2) +
+  scale_x_log10(labels = scales::label_number()) +
+  scale_color_viridis_d(option = "plasma", begin = .9, end = 0)
+```
+
+Cerchiamo di capire quali sono i primi 5 modelli in base alla metrica "rmse" e ci salviamo il migliore in base alla stessa metrica
+
+```{r }
+tree_res %>%
+  show_best("rmse")
+```
+
+```{r }
+best_tree <- tree_res %>%
+  select_best("rmse")
+best_tree
+```
+
+Adesso che abbiamo fatto il tuning sui due parametri possiamo finalizzare il workflow del tuning.
+
+```{r }
+final_wf <- 
+  tree_wf %>% 
+  finalize_workflow(best_tree)
+```
+
+ora che abbiamo trovatio il modello ottimo per numero di rami e valore della penalty dobbiamo fare l'ultimo fit sul test set per valutare la sua perfomance
+
+```{r }
+final_fit <- 
+  final_wf %>%
+  last_fit(ames_split) 
+
+metrics=final_fit %>%
+  collect_metrics()
+REGTREE_RMSE=metrics$.estimate[1]
+REGTREE_RMSE
+```
+
+Estraiamo dal nostro workflow la struttura dell'albero e visualizziamola
+
+```{r }
+final_tree <- extract_workflow(final_fit)
+```
+
+vedo le variabili piu' importanti negli split
+
+```{r }
+library(vip)
+final_tree %>% 
+  extract_fit_parsnip() %>% 
+  vip()
+```
+
+visualizzo l'albero
+
+```{r fig.height=20, fig.width=20}
+library(rpart.plot)
+final_tree %>%
+  extract_fit_engine() %>%
+  rpart.plot(roundint = FALSE)
+```
+
+## PRUNING
+
+```{r}
+library("kableExtra")
+library("xgboost")
+```
+
+```{r}
+library(tidymodels)
+ames_split = initial_split(ames_cleaned,prop=3/4)
+ames_train = training(ames_split)
+ames_test = testing(ames_split)
+ames_folds= vfold_cv(ames_train,v=5)
+
+ames_recipe = ames_train %>% recipe(sale_price_log~.)
+
+tree_spec = decision_tree(cost_complexity=tune()) %>% 
+  set_engine("rpart") %>% 
+  set_mode("regression")
+
+ames_wflow = workflow() %>% 
+  add_recipe(ames_recipe) %>% 
+  add_model(tree_spec)
+```
+
+Definisco i valori del parametro del cost complexity pruning ed eseguo il fit.
+
+Attraverso l'analisi dell'accuratezza osservo che 0 ? il miglior parametro
+
+```{r}
+alphas = expand.grid(cost_complexity = seq(0,1,by=.05))
+
+ames_fit = ames_wflow %>% 
+  tune_grid(resamples=ames_folds,
+            grid=alphas,
+            control=control_grid(save_pred = TRUE))
+
+ames_metrics = ames_fit %>% collect_metrics()
+ames_metrics %>% ggplot(aes(x=cost_complexity,y=mean,color=.metric))+geom_line()+facet_wrap(~.metric)
+
+param_final <- ames_fit %>%
+  select_best(metric = "rmse")
+param_final
+```
+
+Inserisco il valore del parametro nel workflow ed eseguo il fit finale.
+
+La performance sul test set si valuta con collect_metrics
+
+```{r}
+ames_wflow <- ames_wflow %>%
+  finalize_workflow(param_final)
+
+ames_fit = ames_wflow %>%
+  last_fit(ames_split)
+
+rmse_prun=ames_fit %>% collect_metrics()
+RMSE_PRUN=rmse_prun$.estimate[1]
+RMSE_PRUN
+```
+
+## RANDOM FOREST
+
+```{r}
+set.seed(1243)
+ames_split <- initial_split(ames_cleaned, prop = .1, strata = sale_price_log)
+ames_train <- training(ames_split)
+ames_test  <- testing(ames_split)
+ames_folds <- vfold_cv(ames_train, v = 3, repeats = 1, strata = sale_price_log)
+# divido il training set in 3 folds
+ames_recipe=recipe(sale_price_log ~ ., data = ames_train, importance = TRUE) %>%
+      step_normalize(all_numeric_predictors())
+
+rf_model <- 
+    rand_forest(mtry = tune()) %>%
+    set_mode("regression") %>%
+    set_engine("ranger")
+
+rf_wflow = workflow() %>% 
+  add_recipe(ames_recipe) %>% 
+  add_model(rf_model) 
+```
+
+Eseguo il tuning per scegliere il valore del numero di predittori da usare per ogni albero della random forest
+
+Specifico cosi la griglia da utilizzare nel fit
+
+```{r}
+rf_param <-
+    rf_wflow %>%
+    hardhat::extract_parameter_set_dials() %>% 
+    update(mtry = mtry(range = c(3, 5)),)
+
+rf_grid=grid_regular(rf_param)
+
+rf_fit = rf_wflow %>% 
+  tune_grid(grid=rf_grid,
+            resamples=ames_folds,
+            param_info = rf_param)
+```
+
+Valuto l'RMSE per ogni albero e scelgo i migliori parametri di tuning
+
+```{r}
+rf_rmses=rf_fit %>% collect_metrics() %>% filter(.metric=="rmse")
+
+rf_rmses %>% select(mtry,mean) %>%
+ mutate(rmse=mean) %>% 
+  unite("mtry", c(mtry)) %>% 
+  ggplot(aes(x=mtry,y=rmse))+ geom_point(color="red")
+
+
+rf_fit %>%  select_best(metric= "rmse")
+rf_param_final <- select_by_one_std_err(rf_fit, mtry,
+                                        metric = "rmse")
+
+```
+
+Creo il workflow finale con i parametri scelti, modifico anche la recipe perch? anch'essa conteneva un parametro di tuning e valuto l'rmse sul test set
+
+```{r}
+rf_wflow_final <- rf_wflow %>% finalize_workflow(rf_param_final)  
+rf_wflow_final_fit <- fit(rf_wflow_final, data = ames_train)
+
+ames_rec     <- extract_recipe(rf_wflow_final_fit)
+rf_final_fit <- pull_workflow_fit(rf_wflow_final_fit)
+
+ames_test$.pred <- predict(rf_final_fit, 
+                          new_data = bake(ames_rec, ames_test))$.pred
+
+metrics=metrics(ames_test, truth = sale_price_log, estimate = .pred)
+RF_RMSE=metrics$.estimate[1]
+RF_RMSE
+```
+
+## BOOSTING
+
+```{r}
+library(janitor)
+set.seed(1234)
+ames_cleaned2=ames_cleaned %>% clean_names()
+```
+
+```{r}
+ames_split <- initial_split(
+  ames_cleaned2,
+  prop = 0.2,
+  strata = sale_price_log
+)
+ames_train=training(ames_split)
+ames_test=testing(ames_split)
+ames_folds = vfold_cv(ames_train,v = 5)
+
+
+preprocessing_recipe <- recipe(sale_price_log ~ ., data = ames_train) %>%
+  step_string2factor(all_nominal()) %>%
+  step_other(all_nominal(), threshold = 0.01) %>%
+  step_nzv(all_nominal()) %>%
+  prep()
+
+ames_folds = bake(preprocessing_recipe,
+                  new_data = ames_train) %>%  vfold_cv(v = 5)
+```
+
+Eseguo il bake, poi nella specifica del modello ho molti parametri da considerare nel boosting:
+
+-il numero di alberi(che in questo caso fisso a 1000)
+
+-il minimo di dati che possono essere contenuti in ogni nodo
+
+-la massima taglia dell'albero
+
+#- learn_rate: The rate at which the boosting algorithm adapts from iteration-to-iteration.
+
+#- loss_reduction: The reduction in the loss function required to split further.
+
+```{r}
+boost_model <-
+boost_tree(
+    mode = "regression",
+    trees = 1000,
+    min_n = tune(),
+    tree_depth = tune(),
+    learn_rate = tune(),
+    loss_reduction = tune()
+  ) %>%
+    set_engine("xgboost", objective = "reg:squarederror")
+
+
+boost_params <-
+parameters(
+    min_n(),
+    tree_depth(),
+    learn_rate(),
+    loss_reduction()
+  )
+
+boost_grid <-
+grid_max_entropy(
+    boost_params,
+    size = 10
+  )
+
+#mi mostra la griglia di tutti i parametri
+boost_grid %>% head() %>% kable() %>% 
+  kable_styling(bootstrap_options = c("hover","stripe"),full_width = F)
+```
+
+Creo il workflow ed eseguo il fit del modello con i diversi parametri
+
+```{r}
+boost_wf <-
+  workflow() %>%
+  add_model(boost_model) %>%
+  add_formula(sale_price_log ~ .)
+
+boost_tuned <- tune_grid(
+  object = boost_wf,
+  resamples = ames_folds,
+  grid = boost_grid,
+  metrics = metric_set(rmse, rsq, mae),
+  control = control_grid(verbose = TRUE)
+)
+boost_tuned%>%unnest(.metrics)
+```
+
+Scelgo poi i migliori parametri attraverso l'RMSE
+
+```{r}
+boost_best_params <- boost_tuned %>%select_best("rmse")
+boost_best_params
+
+boost_model_final <- boost_model %>%
+  finalize_model(boost_best_params)
+```
+
+Una volta scelti i parametri, valuto il modello scelto sul test set calcolandone l'RMSE
+
+```{r}
+train_processed  <- bake(preprocessing_recipe, new_data = ames_train)
+test_processed  <- bake(preprocessing_recipe, new_data = ames_test)
+
+
+
+test_prediction <- boost_model_final %>%
+  fit(formula = sale_price_log ~ .,
+    data    = train_processed) %>%
+  predict(new_data = test_processed) %>%
+  bind_cols(ames_test)
+
+boost_score <-
+  test_prediction %>%
+  metrics( sale_price_log, .pred) %>%
+  mutate(.estimate = format(round(.estimate, 2)))
+
+BOOST_RMSE=boost_score$.estimate[1]
+BOOST_RMSE
+```
+
+## KNN
+
+```{r}
+library(ISLR)
+library(discrim)
+library("kknn")
+```
+
+VALIDATION SET
+
+```{r}
+set.seed(2)
+ames_split = initial_split(ames_cleaned,prop=3/4)
+ames_train = training(ames_split)
+ames_test = testing(ames_split)
+
+ames_recipe = recipe(sale_price_log~., data=ames_train) %>% 
+    step_normalize(all_numeric_predictors())
+
+ames_recipe %>% prep(train=ames_train) %>% bake(new_data=NULL) %>% glimpse() 
+
+ames_knn = nearest_neighbor(mode="regression", neighbors=tune()) %>% 
+  set_engine("kknn")
+k_grid=grid_regular(neighbors(),levels=6)
+k_grid
+
+ames_wflow=workflow() %>%
+  add_recipe(ames_recipe) %>%
+  add_model(ames_knn)
+```
+
+```{r}
+library("kknn")
+ames_fold2=vfold_cv(ames_train,v=2)
+
+ames_knn_fit= ames_wflow %>% 
+  tune_grid(resamples = ames_fold2, #uso un fold con 2 split
+            grid=k_grid)
+
+ames_knn_fit %>% unnest(.metrics)
+
+collect_metrics(ames_knn_fit) %>% 
+  ggplot(aes(x=neighbors,y=mean,color=.metric))+
+  geom_point()+geom_line()+facet_grid(~.metric)
+```
+
+CROSS VALIDATION
+
+A questo punto si effettua il fit sui diversi fold, e per i diversi valori del parametro di tuning, utilizzando la funzione {tune\\\_grid}.
+
+Per visualizzare i risultati uso unnest o collect_metrics
+
+```{r}
+set.seed(2)
+ames_folds = vfold_cv(ames_train,v=5)
+ames_folds
+
+ames_K_tuned = ames_wflow %>% 
+  tune_grid(resamples = ames_folds,
+            grid=k_grid)
+
+ames_K_tuned %>% unnest(.metrics)
+
+collect_metrics(ames_K_tuned)
+```
+
+Per visualizzare i risultati del processo di tuning
+
+```{r}
+collect_metrics(ames_K_tuned) %>% 
+  ggplot(aes(x=neighbors,y=mean,color=.metric))+
+  geom_point()+geom_line()+facet_grid(~.metric)
+```
+
+Una volta definito il modello con il parametro di tuning ottimale, in questo caso 10, si effettua il fit su tutto il training set.
+
+```{r}
+best_knn = ames_K_tuned %>% select_best("rmse")
+
+knn_rmse=ames_K_tuned %>% unnest(.metrics) %>% filter(.metric=="rmse") %>% 
+  group_by(neighbors) %>% summarise(rmse=mean(.estimate)) %>% slice_max(rmse)
+
+final_knn = ames_wflow %>% finalize_workflow(best_knn)
+
+final_knn_fit = final_knn %>% last_fit(ames_split) 
+KNN_RMSE=knn_rmse$rmse
+KNN_RMSE
+```
+
+# Miglior modello di Regressione
+
+```{r fig.height=10, fig.width=25}
+library(ggpubr)
+BOOST_RMSE <- as.numeric(BOOST_RMSE)
+# Bar plot dei risultati
+
+Regression_RMSE <- tibble(Model = c("Best subset", "LASSO", "Ridge", "PCA","KNN", "Regression Tree", "Pruning", "RandomForest", "Boosting"),
+
+Test_RMSE = c(round(BSS_RMSE,4), round(LASSO_RMSE,4),
+round(RIDGE_RMSE,4),round(pca_rmse,4), round(KNN_RMSE,4), round(REGTREE_RMSE,4),round(RMSE_PRUN,4),
+ round(RF_RMSE,4), round(BOOST_RMSE,4)
+
+))
+
+p = Regression_RMSE %>%
+ggplot(aes(Model, Test_RMSE, ymin = 0,00, ymax = 0.06)) +
+geom_col (position = "dodge", width = 0.8, fill = "lightblue") +
+ggtitle("Model comparison")
+
+p + theme(plot.title = element_text(size = 30, face = "bold"),
+axis.title=element_text(size=25,face="bold"),
+panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(),
+axis.text.x = element_text(angle = 0, size =20),
+axis.text.y = element_text(angle = 0, size = 25)) +
+geom_text(aes(label=Test_RMSE),position=position_dodge(width=0.9), hjust=-0.02, size = 20) +
+coord_flip() + bgcolor("white")
+```
+
+```{r}
+Model = c("Best subset", "LASSO", "Ridge", "PCA","KNN", "Regression Tree", "Pruning", "RandomForest", "Boosting")
+Test_RMSE = c(BSS_RMSE,LASSO_RMSE,RIDGE_RMSE,pca_rmse,KNN_RMSE,REGTREE_RMSE,RMSE_PRUN,RF_RMSE,BOOST_RMSE)
+min_value <- min(Test_RMSE)
+min_index <- which.min(Test_RMSE)
+min_model <- Model[min_index]
+
+cat("Il minimo Test_RMSE ?:", min_value, " che appartiene a ", min_model," model")
+
+```
+
+## Importanza dei dati nella PCA
+
+```{r}
+plot(pca.lm)
+summary(pca.lm)
+
+```
+
+Il Residual Standard Error (RSE) è una misura dell'errore residuo nella previsione del modello. In questo caso, il valore di RSE è 0.06249, il che significa che la media delle differenze tra i valori previsti e i valori osservati è di 0.06249.
+
+Il valore di R2 ajustato tiene conto del numero di variabili nel modello. In questo caso, il valore di R2 ajustado è di 0.8566, il che significa che l'85,66% della varianza della variabile dipendente è spiegata dal modello, tenendo conto del numero di variabili utilizzate nel modello.
+
+Il valore del test F-statistic (F-value) è una misura della significatività del modello. Il valore del test F-statistic è 1293 on 10 and 2152 DF, il che significa che il modello è statisticamente significativo. Il valore del p-value (p-value) è inferiore a 2.2e-16, il che significa che la probabilità che il modello sia stato ottenuto per caso è molto bassa.
+
+#### grafico dell'importanza
+
+```{r}
+vip(pca.lm)
+```
+
+visualizzo la PC1
+
+```{r}
+pca.fit$rotation[, 1]
+```
+
+mi seleziono le 10 variabili piu' importanti per la PCA
+
+```{r}
+pca.fit$rotation[order(pca.fit$rotation[,'PC1'], decreasing = TRUE),][1:10,]
+```
+
+# Considerazioni finali
+
+In questo progetto ho applicato 8 algoritmi per prevedere il prezzo di vendita delle case in AMES, IA.
+
+Ho utilizzato tecniche lineari come Ridge e Lasso cosi come tecniche non lineari come i Regression Tree
+
+Ho utilizzato tecniche parametriche come Best Subset Selection cosi come ho usato tecniche non parametriche come il KNN
+
+Per ogni tecnica utilizzata abbiamo calcolato l'RMSE, la metrica utilizzata alla fine per decretare il miglior modello di Regressione
+
+Del nostro miglior modello (PCA) riporto le variabili piu' importanti:
+
+    year_built           
+    foundation_p_conc       
+    garage_cars           
+    year_remod_add        
+    full_bath            
+    gr_liv_area_log       
+    dummy_open_porch_sf   
+    overall_cond_average  
+    exterior_2nd_vinyl_sd 
+
+A livello logico mi ritrovo con le variabili utilizzate in quanto nella scelta della casa le persone tendono a cercare case con un salone grande, con piu' bagni e piu' posti auto. La variabile foundation_concreate indica che questo determinato materiale (dovrebbe essere calcestruzzo o cemento?)influenza particolarmente il prezzo della casa.
+
+Ovviamente sono considerate importanti anche l'anno di costruzione della casa e l'anno in cui ? stata rimodellata(le due variabili sono abbastanze correlate \[0,612\] ma rientrano nella condizione inserita in fase di EDA, inoltre avevo creato una variabile dummy per vedere se la casa era sta rimodellata o meno ma è stata rimossa dal modello in quanto poco significativa)
+
+La presenza di una veranda ovviamente influisce positivamente nel prezzo, cosi come l'utilizzo di materiali di qualit? all'esterno
+
+N.B
+
+Boosting, Regression Tree e Best Subset Selection si sono rilevati pesanti dal punto di vista computazionale ma era alquanto scontato
